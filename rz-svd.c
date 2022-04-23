@@ -4,7 +4,7 @@
 #define XMLBUFSIZE 4096
 #define VALUESIZE  2048
 
-typedef struct ta_iter {
+typedef struct svd_iter {
 	uint8_t yxml_buf[XMLBUFSIZE];
 	yxml_t x;
 
@@ -17,7 +17,7 @@ typedef struct ta_iter {
 	char bitoffset[10];
 	char bitwidth[20];
 	char description[200];
-} ta_iter;
+} svd_iter;
 
 enum { REGISTER_NAME,
 	REGISTER_SIZE,
@@ -38,59 +38,59 @@ static const RzCmdDescHelp svd_usage = {
 	.args = cmd_svd_args,
 };
 
-static inline int ta_iter_done(ta_iter *ta) {
+static inline int svd_iter_done(svd_iter *ta) {
 	return *ta->ptr == 0 || ta->ptr >= ta->end;
 }
 
-static ta_iter *ta_iter_return(ta_iter *ta, RzCore *core);
-static ta_iter *ta_iter_init_vars(ta_iter *ta);
-static inline int ta_iter_find_register(ta_iter *ta);
-static inline int ta_iter_parse_register(ta_iter *ta, RzCore *core);
-static inline int ta_iter_find_baseaddress(ta_iter *ta);
+static svd_iter *svd_iter_return(svd_iter *ta, RzCore *core);
+static svd_iter *svd_iter_init_vars(svd_iter *ta);
+static inline int svd_iter_find_register(svd_iter *ta);
+static inline int svd_iter_parse_register(svd_iter *ta, RzCore *core);
+static inline int svd_iter_find_baseaddress(svd_iter *ta);
 
-static ta_iter *ta_iter_next(ta_iter *ta, RzCore *core) {
+static svd_iter *svd_iter_next(svd_iter *ta, RzCore *core) {
 	int ret;
 
 	if (!ta->baseaddress[0]) {
-		ta_iter_done(ta);
+		svd_iter_done(ta);
 	}
-	while (!ta_iter_done(ta) &&
+	while (!svd_iter_done(ta) &&
 		(yxml_parse(&ta->x, *ta->ptr) != YXML_ELEMSTART ||
 			strcasecmp(ta->x.elem, "peripherals"))) {
 		ta->ptr++;
 	}
-	if (ta_iter_done(ta)) {
+	if (svd_iter_done(ta)) {
 		return NULL;
 	}
 
-	ret = ta_iter_find_baseaddress(ta);
+	ret = svd_iter_find_baseaddress(ta);
 	if (ret == 1) {
-		return ta_iter_next(ta, core);
+		return svd_iter_next(ta, core);
 	}
-	if (ta_iter_done(ta)) {
+	if (svd_iter_done(ta)) {
 		return NULL;
 	}
 
-	if (ta_iter_find_register(ta)) {
-		return ta_iter_next(ta, core);
+	if (svd_iter_find_register(ta)) {
+		return svd_iter_next(ta, core);
 	}
-	if (ta_iter_done(ta)) {
+	if (svd_iter_done(ta)) {
 		return NULL;
 	}
 
-	ta_iter_init_vars(ta);
+	svd_iter_init_vars(ta);
 
-	ret = ta_iter_parse_register(ta, core);
+	ret = svd_iter_parse_register(ta, core);
 	if (ret == 1) {
-		return ta_iter_next(ta, core);
+		return svd_iter_next(ta, core);
 	} else if (ret == -1) {
 		return NULL;
 	}
 
-	return ta_iter_return(ta, core);
+	return svd_iter_return(ta, core);
 }
 
-static inline int ta_iter_find_baseaddress(ta_iter *ta) {
+static inline int svd_iter_find_baseaddress(svd_iter *ta) {
 	int level = 0;
 	yxml_ret_t r = YXML_OK;
 	char *cur, *tmp;
@@ -98,7 +98,7 @@ static inline int ta_iter_find_baseaddress(ta_iter *ta) {
 	cur = value;
 	value[0] = 0;
 
-	while (!ta_iter_done(ta) && !ta->baseaddress[0]) {
+	while (!svd_iter_done(ta) && !ta->baseaddress[0]) {
 		switch ((r = yxml_parse(&ta->x, *ta->ptr))) {
 		case YXML_ELEMSTART:
 			level += 1;
@@ -140,7 +140,7 @@ static inline int ta_iter_find_baseaddress(ta_iter *ta) {
 	return 0;
 }
 
-static inline int ta_iter_parse_register(ta_iter *ta, RzCore *core) {
+static inline int svd_iter_parse_register(svd_iter *ta, RzCore *core) {
 	int level = 3;
 	int address;
 	char *cur = NULL, *tmp;
@@ -233,7 +233,7 @@ static inline int ta_iter_parse_register(ta_iter *ta, RzCore *core) {
 			break;
 		}
 		ta->ptr++;
-		if (ta_iter_done(ta)) {
+		if (svd_iter_done(ta)) {
 			return -1;
 		}
 		r = yxml_parse(&ta->x, *ta->ptr);
@@ -241,10 +241,10 @@ static inline int ta_iter_parse_register(ta_iter *ta, RzCore *core) {
 	return 0;
 }
 
-static inline int ta_iter_find_register(ta_iter *ta) {
+static inline int svd_iter_find_register(svd_iter *ta) {
 	yxml_ret_t r = YXML_OK;
 	int level = 0;
-	while (!ta_iter_done(ta)) {
+	while (!svd_iter_done(ta)) {
 		r = yxml_parse(&ta->x, *ta->ptr);
 
 		if (r == YXML_ELEMSTART) {
@@ -266,14 +266,14 @@ static inline int ta_iter_find_register(ta_iter *ta) {
 	return 0;
 }
 
-static ta_iter *ta_iter_return(ta_iter *ta, RzCore *core) {
+static svd_iter *svd_iter_return(svd_iter *ta, RzCore *core) {
 	if (!ta) {
 		return NULL;
 	}
-	return *ta->bitoffset && *ta->regname && *ta->baseaddress && *ta->bitwidth && *ta->description ? ta : ta_iter_next(ta, core);
+	return *ta->bitoffset && *ta->regname && *ta->baseaddress && *ta->bitwidth && *ta->description ? ta : svd_iter_next(ta, core);
 }
 
-static ta_iter *ta_iter_init_vars(ta_iter *ta) {
+static svd_iter *svd_iter_init_vars(svd_iter *ta) {
 	if (!ta) {
 		return NULL;
 	}
@@ -281,7 +281,7 @@ static ta_iter *ta_iter_init_vars(ta_iter *ta) {
 	return ta;
 }
 
-static ta_iter *ta_iter_init(ta_iter *ta, const char *file) {
+static svd_iter *svd_iter_init(svd_iter *ta, const char *file) {
 	char *doc = rz_file_slurp(file, NULL);
 	if (!doc) {
 		eprintf("Failed to open file \"%s\"\n", file);
@@ -300,11 +300,11 @@ static ta_iter *ta_iter_init(ta_iter *ta, const char *file) {
 }
 
 static int parse_svd(RzCore *core, const char *file) {
-	ta_iter ta_spc, *ta;
-	ta = ta_iter_init(&ta_spc, file);
-	ta = ta_iter_next(ta, core);
+	svd_iter ta_spc, *ta;
+	ta = svd_iter_init(&ta_spc, file);
+	ta = svd_iter_next(ta, core);
 	while (ta) {
-		ta = ta_iter_next(ta, core);
+		ta = svd_iter_next(ta, core);
 	}
 	return 1;
 }
