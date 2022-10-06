@@ -4,6 +4,18 @@
 #define XMLBUFSIZE 4096
 #define VALUESIZE  2048
 
+/**
+ * \brief The main module - iterator
+ *
+ * 	svd_iter contains the information
+ *  that a single Rizin comment needs.
+ * 
+ *  Upon parsing information about a register,
+ *  the existinng information about it are added
+ *  as a Rizin comment and flag and are overwritten
+ *  on the next iteration.
+ * 	
+ */
 typedef struct svd_iter {
 	uint8_t yxml_buf[XMLBUFSIZE];
 	yxml_t x;
@@ -19,6 +31,11 @@ typedef struct svd_iter {
 	char description[200];
 } svd_iter;
 
+
+/**
+ * Used to denote the type of
+ * information that we're parsing
+ */
 enum { REGISTER_NAME,
 	REGISTER_SIZE,
 	REGISTER_OFFSET,
@@ -48,6 +65,14 @@ static inline int svd_iter_find_register(svd_iter *ta);
 static inline int svd_iter_parse_register(svd_iter *ta, RzCore *core);
 static inline int svd_iter_find_baseaddress(svd_iter *ta);
 
+/**
+ * \brief Handles a single parse operation
+ *
+ * 	From this function, calls are made to
+ *  parse the respective fields and stores
+ *  the parsed information to the iterator 
+ *  (svd_iter pointer).
+ */
 static svd_iter *svd_iter_next(svd_iter *ta, RzCore *core) {
 	int ret;
 
@@ -90,6 +115,10 @@ static svd_iter *svd_iter_next(svd_iter *ta, RzCore *core) {
 	return svd_iter_return(ta, core);
 }
 
+
+/**
+ * \brief Parses the base address
+ */
 static inline int svd_iter_find_baseaddress(svd_iter *ta) {
 	int level = 0;
 	yxml_ret_t r = YXML_OK;
@@ -140,6 +169,13 @@ static inline int svd_iter_find_baseaddress(svd_iter *ta) {
 	return 0;
 }
 
+/**
+ * \brief Parses the register
+ *
+ *  After parsing the particulaaras of the
+ *  register, flags and comments are added.
+ *
+ */
 static inline int svd_iter_parse_register(svd_iter *ta, RzCore *core) {
 	int level = 3;
 	int address;
@@ -241,6 +277,10 @@ static inline int svd_iter_parse_register(svd_iter *ta, RzCore *core) {
 	return 0;
 }
 
+/**
+ * \brief Finds the register
+ *
+ */
 static inline int svd_iter_find_register(svd_iter *ta) {
 	yxml_ret_t r = YXML_OK;
 	int level = 0;
